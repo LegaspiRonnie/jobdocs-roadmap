@@ -27,6 +27,27 @@ export default function App() {
     window.localStorage.setItem(SAVED_PROGRESS_KEY, JSON.stringify(checkedDocs));
   }, [checkedDocs]);
 
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state?.view === "doc" && typeof event.state.docId === "string") {
+        setSelectedDocId(event.state.docId);
+      } else {
+        setSelectedDocId(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (currentDoc) {
+      window.history.pushState({ view: "doc", docId: selectedDocId }, "", `#doc-${selectedDocId}`);
+    } else {
+      window.history.replaceState({ view: "list" }, "", window.location.pathname + window.location.search);
+    }
+  }, [currentDoc, selectedDocId]);
+
   const toggleDocCheck = (id) => {
     setCheckedDocs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -355,53 +376,48 @@ export default function App() {
           </nav>
         </div>
 
-        <header className="app-header">
-          <div className="hero-panel">
-            <div className="eyebrow">Employment Document Tracker</div>
-            <h1 className="logo-title">
-              JobDocs <span className="title-gradient">Roadmap</span>
-            </h1>
-            <p className="sub-title">
-              A formal guide for preparing common employment documents in the Philippines.
-              Review the numbered sequence, open each document for requirements and processing notes,
-              then mark the item as completed once you have finished it.
-              Progress is saved locally on this browser without requiring an account.
-            </p>
-            <div className="hero-note-row">
-              <span className="hero-note">Recommended processing order</span>
-              <span className="hero-note">Requirements and estimated timeline</span>
-              <span className="hero-note">Local progress saving</span>
-            </div>
-          </div>
-
-          <aside className="progress-panel">
-            <div>
-              <div className="progress-number">{progressPercent}%</div>
-              <p className="progress-label">completed across your employment document preparation list</p>
-            </div>
-            <div className="progress-track-line">
-              <div className="progress-fill-line" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="progress-stats">
-              <div className="mini-stat">
-                <strong>{completedCount}</strong>
-                <span>Completed</span>
-              </div>
-              <div className="mini-stat">
-                <strong>{remainingCount}</strong>
-                <span>Pending</span>
-              </div>
-            </div>
-          </aside>
-        </header>
-
-        {currentDoc ? (
-          <DocumentDetail
-            doc={currentDoc}
-            onBack={() => setSelectedDocId(null)}
-          />
-        ) : (
+        {!currentDoc && (
           <>
+            <header className="app-header">
+              <div className="hero-panel">
+                <div className="eyebrow">Employment Document Tracker</div>
+                <h1 className="logo-title">
+                  JobDocs <span className="title-gradient">Roadmap</span>
+                </h1>
+                <p className="sub-title">
+                  A formal guide for preparing common employment documents in the Philippines.
+                  Review the numbered sequence, open each document for requirements and processing notes,
+                  then mark the item as completed once you have finished it.
+                  Progress is saved locally on this browser without requiring an account.
+                </p>
+                <div className="hero-note-row">
+                  <span className="hero-note">Recommended processing order</span>
+                  <span className="hero-note">Requirements and estimated timeline</span>
+                  <span className="hero-note">Local progress saving</span>
+                </div>
+              </div>
+
+              <aside className="progress-panel">
+                <div>
+                  <div className="progress-number">{progressPercent}%</div>
+                  <p className="progress-label">completed across your employment document preparation list</p>
+                </div>
+                <div className="progress-track-line">
+                  <div className="progress-fill-line" style={{ width: `${progressPercent}%` }} />
+                </div>
+                <div className="progress-stats">
+                  <div className="mini-stat">
+                    <strong>{completedCount}</strong>
+                    <span>Completed</span>
+                  </div>
+                  <div className="mini-stat">
+                    <strong>{remainingCount}</strong>
+                    <span>Pending</span>
+                  </div>
+                </div>
+              </aside>
+            </header>
+
             <div className="section-intro">
               <div>
                 <h2>Numbered Document Flow</h2>
@@ -411,13 +427,21 @@ export default function App() {
                 </p>
               </div>
             </div>
-            <RoadmapView
-              data={DOCUMENTATION_DATA}
-              checkedDocs={checkedDocs}
-              onSelectNode={(id) => setSelectedDocId(id)}
-              onToggleDone={toggleDocCheck}
-            />
           </>
+        )}
+
+        {currentDoc ? (
+          <DocumentDetail
+            doc={currentDoc}
+            onBack={() => window.history.back()}
+          />
+        ) : (
+          <RoadmapView
+            data={DOCUMENTATION_DATA}
+            checkedDocs={checkedDocs}
+            onSelectNode={(id) => setSelectedDocId(id)}
+            onToggleDone={toggleDocCheck}
+          />
         )}
 
         <footer className="site-footer">

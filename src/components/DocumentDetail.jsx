@@ -172,7 +172,7 @@ export default function DocumentDetail({ doc, onBack }) {
 
       <div className="detail-card">
         <button className="back-nav-link" onClick={onBack}>
-          Back to Roadmap System
+          ← Back to Roadmap System
         </button>
 
         <div className="detail-hero-block">
